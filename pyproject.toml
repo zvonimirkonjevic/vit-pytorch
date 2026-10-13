@@ -1,0 +1,10 @@
+[project]
+name = "vit-pytorch"
+version = "0.1.0"
+description = "Implementation of Vision Transformer, 'An Image is Worth 16x16 Words: Transformers for Image Recognition at Scale', from Google Brain."
+readme = "README.md"
+requires-python = ">=3.14"
+dependencies = [
+    "torch>=2.14.1",
+    "torchvision>=0.29.1",
+]
