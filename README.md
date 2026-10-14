@@ -65,12 +65,15 @@ data/
     └── ...
 ```
 
+Run `01_data_exploration.ipynb` first. It drops the 44 images that are not 256x256 and copies the remaining 2,056 to `data/processed/`, keeping one folder per class. `data/raw/` is left untouched.
+
 `data/` is git-ignored.
 
 ## Usage
 
 | Notebook | Description |
 | --- | --- |
+| [`01_data_exploration.ipynb`](notebooks/01_data_exploration.ipynb) | Explores the classes and image resolutions, drops the 44 images that are not 256x256 so every image splits into the same $N$ patches, and saves the remaining 2,056 images to `data/processed/`. |
 | [`02_embedding_patches.ipynb`](notebooks/02_embedding_patches.ipynb) | Splits images into patches, flattens them, projects them to $D$ dimensions, and prepends the class token and adds position embeddings. Also generates the patch embedding GIF and saves $\mathbf{z}_0$ of one image to `patch_embedding_sample.pt`, the input of the next notebooks. |
 | [`03_multi_head_attention.ipynb`](notebooks/03_multi_head_attention.ipynb) | Implements scaled dot-product attention and multi-head self-attention on the embedded patches of one image ($\mathbf{z}_0$, loaded from `patch_embedding_sample.pt`), and checks the result against `nn.MultiheadAttention`. |
 | [`04_transformer_encoder.ipynb`](notebooks/04_transformer_encoder.ipynb) | Combines multi-head attention and a GELU MLP into a pre-norm Transformer encoder block with residual connections and dropout (Eq. 2 and 3), applied to $\mathbf{z}_0$ from `patch_embedding_sample.pt`. |
