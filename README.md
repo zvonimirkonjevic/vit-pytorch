@@ -18,6 +18,7 @@ From-scratch PyTorch implementation of the Vision Transformer from [An Image is 
   - [Patch embedding](#patch-embedding)
   - [Multi-head attention](#multi-head-attention)
   - [Transformer encoder](#transformer-encoder)
+  - [Vision Transformer](#vision-transformer)
 - [Citation](#citation)
 
 ## About
@@ -33,8 +34,8 @@ The goal of this repository is to understand the Vision Transformer by rebuildin
 - [x] Multi-head self-attention
 - [x] MLP block
 - [x] Transformer encoder block
-- [ ] Encoder stack and final LayerNorm
-- [ ] Classification head
+- [x] Encoder stack and final LayerNorm
+- [x] Classification head
 - [ ] Training and evaluation
 
 ## Setup
@@ -77,6 +78,15 @@ Run `01_data_exploration.ipynb` first. It drops the 44 images that are not 256x2
 | [`02_embedding_patches.ipynb`](notebooks/02_embedding_patches.ipynb) | Splits images into patches, flattens them, projects them to $D$ dimensions, and prepends the class token and adds position embeddings. Also generates the patch embedding GIF and saves $\mathbf{z}_0$ of one image to `patch_embedding_sample.pt`, the input of the next notebooks. |
 | [`03_multi_head_attention.ipynb`](notebooks/03_multi_head_attention.ipynb) | Implements scaled dot-product attention and multi-head self-attention on the embedded patches of one image ($\mathbf{z}_0$, loaded from `patch_embedding_sample.pt`), and checks the result against `nn.MultiheadAttention`. |
 | [`04_transformer_encoder.ipynb`](notebooks/04_transformer_encoder.ipynb) | Combines multi-head attention and a GELU MLP into a pre-norm Transformer encoder block with residual connections and dropout (Eq. 2 and 3), applied to $\mathbf{z}_0$ from `patch_embedding_sample.pt`. |
+| [`05_vit.ipynb`](notebooks/05_vit.ipynb) | Assembles the full Vision Transformer (Eq. 1 to 4) from the patch embedding and encoder block in `src/vit/model.py`, prints its summary and runs a forward pass on a random image. |
+
+The finished components live in the `vit` package under `src/`, installed in editable mode by `uv sync`:
+
+```python
+from vit.model import ViT
+
+model = ViT()  # ViT-Base/16 for 256x256 RGB images and 21 classes
+```
 
 ## Implementation
 
@@ -161,6 +171,25 @@ $$
 Following Appendix B.1, dropout is applied after every dense layer except the qkv projections: after the attention output projection $W^O$ and after both MLP layers. With ViT-Base sizes (Table 1), one block has 7,087,872 parameters, so 12 blocks account for about 85M of the model's 86M.
 
 The paper does not specify the LayerNorm epsilon, so it follows the [official implementation](https://github.com/google-research/vision_transformer): $10^{-6}$ instead of PyTorch's default $10^{-5}$.
+
+### Vision Transformer
+
+The full model chains the previous parts: the embedded patches with the class token and position embeddings (Eq. 1), $L$ stacked encoder blocks (Eq. 2 and 3), and a classification head on the class token output of the last block (Eq. 4):
+
+$$
+\mathbf{y} = \text{LN}(\mathbf{z}^0_L)
+$$
+
+| Paper | Code (`ViT`) | Shape for a 256x256 RGB image, $P = 16$, $D = 768$, 21 classes |
+| --- | --- | --- |
+| $\mathbf{x}$ | `x` | `(B, 3, 256, 256)` |
+| $\mathbf{x}_p \mathbf{E}$ | `patch_embedding(x)` | `(B, 256, 768)` |
+| $\mathbf{z}_0$ | `embeddings` (class token prepended, `position_embedding` added) | `(B, 257, 768)` |
+| $\mathbf{z}_L$ | `transformer_encoder(embeddings)` | `(B, 257, 768)` |
+| $\mathbf{z}^0_L$ | `transformer_output[:, 0]` | `(B, 768)` |
+| $\mathbf{y}$, logits | `classifier(...)`: LayerNorm, then Linear | `(B, 21)` |
+
+The encoder blocks are stacked with `nn.Sequential`, since each block only consumes the output of the previous one. Dropout is applied right after adding the position embeddings (Appendix B.1). The head is the single linear layer the paper uses at fine-tuning time, not the one-hidden-layer MLP used for pre-training. With the ViT-Base sizes the model has 85,860,885 parameters, in line with the 86M of Table 1.
 
 ## Citation
 
