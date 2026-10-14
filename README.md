@@ -78,7 +78,7 @@ Run `01_data_exploration.ipynb` first. It drops the 44 images that are not 256x2
 | [`02_embedding_patches.ipynb`](notebooks/02_embedding_patches.ipynb) | Splits images into patches, flattens them, projects them to $D$ dimensions, and prepends the class token and adds position embeddings. Also generates the patch embedding GIF and saves $\mathbf{z}_0$ of one image to `patch_embedding_sample.pt`, the input of the next notebooks. |
 | [`03_multi_head_attention.ipynb`](notebooks/03_multi_head_attention.ipynb) | Implements scaled dot-product attention and multi-head self-attention on the embedded patches of one image ($\mathbf{z}_0$, loaded from `patch_embedding_sample.pt`), and checks the result against `nn.MultiheadAttention`. |
 | [`04_transformer_encoder.ipynb`](notebooks/04_transformer_encoder.ipynb) | Combines multi-head attention and a GELU MLP into a pre-norm Transformer encoder block with residual connections and dropout (Eq. 2 and 3), applied to $\mathbf{z}_0$ from `patch_embedding_sample.pt`. |
-| [`05_vit.ipynb`](notebooks/05_vit.ipynb) | Assembles the full Vision Transformer (Eq. 1 to 4) from the patch embedding and encoder block in `src/vit/model.py`, prints its summary and runs a forward pass on a random image. |
+| [`05_vision_transformer.ipynb`](notebooks/05_vision_transformer.ipynb) | Assembles the full Vision Transformer (Eq. 1 to 4) from the patch embedding and encoder block in `src/vit/model.py`, prints its summary and runs a forward pass on a random image. |
 
 The finished components live in the `vit` package under `src/`, installed in editable mode by `uv sync`:
 
