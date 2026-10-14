@@ -17,6 +17,7 @@ From-scratch PyTorch implementation of the Vision Transformer from [An Image is 
 - [Implementation](#implementation)
   - [Patch embedding](#patch-embedding)
   - [Multi-head attention](#multi-head-attention)
+  - [Transformer encoder](#transformer-encoder)
 - [Citation](#citation)
 
 ## About
@@ -30,8 +31,9 @@ The goal of this repository is to understand the Vision Transformer by rebuildin
 - ✅ Class token
 - ✅ Learnable position embedding
 - ✅ Multi-head self-attention
-- ⬜ MLP block
-- ⬜ Transformer encoder
+- ✅ MLP block
+- ✅ Transformer encoder block
+- ⬜ Encoder stack and final LayerNorm
 - ⬜ Classification head
 - ⬜ Training and evaluation
 
@@ -70,7 +72,8 @@ data/
 | Notebook | Description |
 | --- | --- |
 | [`02_embedding_patches.ipynb`](notebooks/02_embedding_patches.ipynb) | Splits images into patches, flattens them, projects them to $D$ dimensions, and prepends the class token and adds position embeddings. Also generates the patch embedding GIF. |
-| [`03_multi_head_attention.ipynb`](notebooks/03_multi_head_attention.ipynb) | Implements scaled dot-product attention and multi-head self-attention on the embedded patches of one image ($\mathbf{z}_0$, loaded from `embedded_patches_single_image.pt`), and checks the result against `nn.MultiheadAttention`. |
+| [`03_multi_head_attention.ipynb`](notebooks/03_multi_head_attention.ipynb) | Implements scaled dot-product attention and multi-head self-attention on the embedded patches of one image ($\mathbf{z}_0$, loaded from `patch_embedding_sample.pt`), and checks the result against `nn.MultiheadAttention`. |
+| [`04_transformer_encoder.ipynb`](notebooks/04_transformer_encoder.ipynb) | Combines multi-head attention and a GELU MLP into a pre-norm Transformer encoder block with residual connections and dropout (Eq. 2 and 3), applied to $\mathbf{z}_0$ from `patch_embedding_sample.pt`. |
 
 ## Implementation
 
@@ -128,6 +131,33 @@ $$
 | $\text{MSA}(\mathbf{z})$ | `W_o(...)` | `(B, 257, 768)` |
 
 With the weights copied over, `MultiHeadAttention` produces the same output as PyTorch's `nn.MultiheadAttention`.
+
+### Transformer encoder
+
+Each encoder block applies multi-head attention and an MLP, with LayerNorm before every sub-block and a residual connection after it (Eq. 2 and 3):
+
+$$
+\mathbf{z}'_\ell = \text{MSA}(\text{LN}(\mathbf{z}_{\ell-1})) + \mathbf{z}_{\ell-1}, \qquad \mathbf{z}_\ell = \text{MLP}(\text{LN}(\mathbf{z}'_\ell)) + \mathbf{z}'_\ell
+$$
+
+The MLP contains two linear layers with a GELU non-linearity, expanding each token to the MLP size and projecting it back to $D$:
+
+$$
+\text{MLP}(\mathbf{x}) = \text{GELU}(\mathbf{x}W_1 + b_1)\,W_2 + b_2
+$$
+
+| Paper | Code | Shape for $N + 1 = 257$ tokens, $D = 768$, MLP size $= 3072$ |
+| --- | --- | --- |
+| $\mathbf{z}_{\ell-1}$ | `x` | `(B, 257, 768)` |
+| $\text{MSA}(\text{LN}(\mathbf{z}_{\ell-1}))$ | `mha_block(x)` (`MultiHeadAttentionBlock`) | `(B, 257, 768)` |
+| $\mathbf{z}'_\ell$ | `x + mha_output` in `TransformerEncoderBlock` | `(B, 257, 768)` |
+| $\text{GELU}(\mathbf{x}W_1 + b_1)$ | `mlp[0]`, `mlp[1]` in `MultiLayerPerceptronBlock` | `(B, 257, 3072)` |
+| $\text{MLP}(\text{LN}(\mathbf{z}'_\ell))$ | `mlp_block(x)` (`MultiLayerPerceptronBlock`) | `(B, 257, 768)` |
+| $\mathbf{z}_\ell$ | `x + mlp_output` in `TransformerEncoderBlock` | `(B, 257, 768)` |
+
+Following Appendix B.1, dropout is applied after every dense layer except the qkv projections: after the attention output projection $W^O$ and after both MLP layers. With ViT-Base sizes (Table 1), one block has 7,087,872 parameters, so 12 blocks account for about 85M of the model's 86M.
+
+The paper does not specify the LayerNorm epsilon, so it follows the [official implementation](https://github.com/google-research/vision_transformer): $10^{-6}$ instead of PyTorch's default $10^{-5}$.
 
 ## Citation
 
