@@ -3,7 +3,7 @@
 From-scratch PyTorch implementation of the Vision Transformer from [An Image is Worth 16x16 Words: Transformers for Image Recognition at Scale](https://arxiv.org/abs/2010.11929) (Dosovitskiy et al., 2020), built step by step in notebooks using only basic PyTorch layers.
 
 <p align="center">
-  <img src="assets/patch_embedding.gif" alt="An image is cut into 16x16 patches, each patch is flattened into a 768-value row and linearly projected to the embedding dimension" width="100%">
+  <img src="assets/vit.gif" alt="Schematic ViT forward pass: an aerial image is split into patches (3x3 shown for clarity), the patches are linearly projected, combined with position embeddings and a learnable class token, passed through the Transformer Encoder, and the class token goes through the MLP head to predict the class. The encoder block (Norm, Multi-Head Attention, MLP and residual connections, repeated L times) is shown on the right, as in Figure 1 of the paper" width="100%">
 </p>
 
 ## Table of Contents
@@ -69,12 +69,16 @@ data/
 
 | Notebook | Description |
 | --- | --- |
-| [`02_embedding_patches.ipynb`](notebooks/02_embedding_patches.ipynb) | Splits images into patches, flattens them, projects them to $D$ dimensions, and prepends the class token and adds position embeddings. Also generates the GIF above. |
+| [`02_embedding_patches.ipynb`](notebooks/02_embedding_patches.ipynb) | Splits images into patches, flattens them, projects them to $D$ dimensions, and prepends the class token and adds position embeddings. Also generates the patch embedding GIF. |
 | [`03_multi_head_attention.ipynb`](notebooks/03_multi_head_attention.ipynb) | Implements scaled dot-product attention and multi-head self-attention on the embedded patches of one image ($\mathbf{z}_0$, loaded from `embedded_patches_single_image.pt`), and checks the result against `nn.MultiheadAttention`. |
 
 ## Implementation
 
 ### Patch embedding
+
+<p align="center">
+  <img src="assets/patch_embedding.gif" alt="An image is cut into 16x16 patches, each patch is flattened into a 768-value row and linearly projected to the embedding dimension" width="100%">
+</p>
 
 The transformer expects a 1D sequence of token embeddings, so an image $\mathbf{x} \in \mathbb{R}^{H \times W \times C}$ is reshaped into a sequence of $N = HW / P^2$ flattened patches $\mathbf{x}_p \in \mathbb{R}^{N \times (P^2 \cdot C)}$. Eq. 1 of the paper then builds the input sequence:
 
