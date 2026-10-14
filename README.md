@@ -26,16 +26,16 @@ The goal of this repository is to understand the Vision Transformer by rebuildin
 
 ## Progress
 
-- ✅ Image patching
-- ✅ Linear patch projection
-- ✅ Class token
-- ✅ Learnable position embedding
-- ✅ Multi-head self-attention
-- ✅ MLP block
-- ✅ Transformer encoder block
-- ⬜ Encoder stack and final LayerNorm
-- ⬜ Classification head
-- ⬜ Training and evaluation
+- [x] Image patching
+- [x] Linear patch projection
+- [x] Class token
+- [x] Learnable position embedding
+- [x] Multi-head self-attention
+- [x] MLP block
+- [x] Transformer encoder block
+- [ ] Encoder stack and final LayerNorm
+- [ ] Classification head
+- [ ] Training and evaluation
 
 ## Setup
 
