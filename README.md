@@ -9,7 +9,6 @@ From-scratch PyTorch implementation of the Vision Transformer from [An Image is 
 ## Table of Contents
 
 - [About](#about)
-- [Progress](#progress)
 - [Setup](#setup)
   - [Environment](#environment)
   - [Data](#data)
@@ -24,19 +23,6 @@ From-scratch PyTorch implementation of the Vision Transformer from [An Image is 
 ## About
 
 The goal of this repository is to understand the Vision Transformer by rebuilding it piece by piece, mapping each part of the code back to the equations in the paper. Every component is implemented and explained in its own notebook, without relying on `torchvision`'s or `timm`'s ready-made ViT modules.
-
-## Progress
-
-- [x] Image patching
-- [x] Linear patch projection
-- [x] Class token
-- [x] Learnable position embedding
-- [x] Multi-head self-attention
-- [x] MLP block
-- [x] Transformer encoder block
-- [x] Encoder stack and final LayerNorm
-- [x] Classification head
-- [ ] Training and evaluation
 
 ## Setup
 
