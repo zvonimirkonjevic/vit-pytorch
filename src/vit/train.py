@@ -4,20 +4,21 @@ Contains functions for training and testing a PyTorch model.
 import torch
 
 from tqdm.auto import tqdm
-from typing import Dict, List, Tuple
+from typing import Dict, List, Optional, Tuple
 
 def train_step(
     model: torch.nn.Module,
     dataloader: torch.utils.data.DataLoader,
     loss_fn: torch.nn.Module,
     optimizer: torch.optim.Optimizer,
-    device: torch.device
+    device: torch.device = "cpu",
+    lr_scheduler: Optional[torch.optim.lr_scheduler.LRScheduler] = None,
 ) -> Tuple[float, float]:
   """Trains a PyTorch model for a single epoch.
 
   Turns a target PyTorch model to training mode and then
   runs through all of the required training steps (forward
-  pass, loss calculation, optimizer step).
+  pass, loss calculation, optimizer step, scheduler step).
 
   Args:
     model: A PyTorch model to be trained.
@@ -25,6 +26,8 @@ def train_step(
     loss_fn: A PyTorch loss function to minimize.
     optimizer: A PyTorch optimizer to help minimize the loss function.
     device: A target device to compute on (e.g. "cuda" or "cpu").
+    lr_scheduler: An optional learning rate scheduler, stepped once per
+      batch, so its schedule length must be expressed in optimizer steps.
 
   Returns:
     A tuple of training loss and training accuracy metrics.
@@ -45,6 +48,8 @@ def train_step(
     optimizer.zero_grad()
     loss.backward()
     optimizer.step()
+    if lr_scheduler is not None:
+      lr_scheduler.step()
 
     y_pred_class = torch.argmax(torch.softmax(y_pred, dim=1), dim=1)
     train_acc += (y_pred_class == y).sum().item() / len(y_pred)
@@ -58,7 +63,7 @@ def test_step(
     model: torch.nn.Module,
     dataloader: torch.utils.data.DataLoader,
     loss_fn: torch.nn.Module,
-    device: torch.device
+    device: torch.device = "cpu"
 ) -> Tuple[float, float]:
   """Tests a PyTorch model for a single epoch.
 
@@ -101,7 +106,8 @@ def train(
     optimizer: torch.optim.Optimizer,
     loss_fn: torch.nn.Module,
     epochs: int,
-    device: torch.device
+    device: torch.device,
+    lr_scheduler: Optional[torch.optim.lr_scheduler.LRScheduler] = None,
 ) -> Dict[str, List[float]]:
   """Trains and tests a PyTorch model.
 
@@ -119,6 +125,7 @@ def train(
     loss_fn: A PyTorch loss function to calculate loss on both datasets.
     epochs: An integer indicating how many epochs to train for.
     device: A target device to compute on (e.g. "cuda" or "cpu").
+    lr_scheduler: An optional learning rate scheduler passed to train_step().
 
   Returns:
     A dictionary of training and testing loss as well as training and
@@ -146,7 +153,8 @@ def train(
         dataloader=train_dataloader,
         loss_fn=loss_fn,
         optimizer=optimizer,
-        device=device
+        device=device,
+        lr_scheduler=lr_scheduler,
     )
 
     test_loss, test_acc = test_step(
